@@ -6,17 +6,41 @@ signal = [2, 3, 5, 9, 18, 62, 53, 1, 23, 5, 4, 6, 5, 66, 45, 100, -100]
 sig2 = [1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
 
 
-def norm(signal):  # faire rentrer le signal entre -1 et +1
-    maximum = max(abs(signal))  # considerer le signal en valeur absolue
-    normsignal = signal / maximum  # diviser par le maximum
+def norm(signal):
+    maximum = max(signal)
+    minimum = min(signal)
+
+    if (maximum == minimum == 0):
+        normsignal = signal
+
+    else:
+        if (maximum > abs(minimum)):
+            normsignal = [float(i) / max(signal) for i in signal]
+
+        else:
+            normsignal = [float(i) / -min(signal) for i in signal]
+
     return normsignal
 
 
 def split(signal, fe, Twidth,
           Tstep):  # # fe = nbr of point took every second : 1s -> fe samples <=> Nsamples = duration * fe
 
-    if (Twidth > Tstep):
-        print("overlap condition is false")
+    if (Twidth == Tstep == 0):
+        print("la fenetre est de largeur 0 et le saut est de 0")
+        return
+    else:
+        if (Twidth == 0):
+            print("la fenetre est de largeur 0")
+            return
+
+        else:
+            if (Twidth > Tstep):
+                print("overlap condition is false")
+                return
+
+    if (fe == 0):
+        print("la fréquence échantillon est nulle")
         return
 
         # compute frame_len & frame_step (seconds to samples)
@@ -42,7 +66,6 @@ def split(signal, fe, Twidth,
 
     splitlist.append(frame)
 
-    print(splitlist)
     return splitlist
 
 
@@ -64,6 +87,7 @@ def randomfichier():
     nomfichier = "arctic_b0%i%i%i.wav" % (centaine, dizaine, unite)
     return nomfichier
 
+# utterance = read("/cmu_us_ksp_arctic/wav/%s" % (randomfichier()))
 
-utterance = read("/cmu_us_ksp_arctic/wav/%s" % (randomfichier()))
+
 
