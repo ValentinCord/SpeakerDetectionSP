@@ -53,14 +53,25 @@ def split(signal, fe, Twidth,
 
     i = 0
     temp = Nwidth
+    print(len(signal))
 
     while i < len(signal):
         if (i % temp == 0 and i != 0):
             splitlist.append(frame)
             frame = []
             i += diff
-            temp += Nstep
+            # temp += Nstep
+
+            # Obligé sinon cela ne marche pas
+            if (temp + Nstep <= len(signal)):
+                temp += Nstep
+
+            else:
+
+                return splitlist
+
         frame.append(signal[i])
+        print(frame)
 
         i += 1
 
@@ -87,7 +98,51 @@ def randomfichier():
     nomfichier = "arctic_b0%i%i%i.wav" % (centaine, dizaine, unite)
     return nomfichier
 
-# utterance = read("/cmu_us_ksp_arctic/wav/%s" % (randomfichier()))
+
+def frameEnergy(A):
+    B = np.zeros(len(A))
+
+    for i in range(len(A)):
+        B[i] = energy(A[i])
+
+    return B
+
+
+# sign= [1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
+# splt = split(sign, 1, 2, 4)
+# print(splt)
+
+
+utterance = read("cmu_us_ksp_arctic/wav/%s" % (randomfichier()))
+fetot = utterance[0]
+fe = int(fetot / 1000)
+print(fe)
+# print(utterance)
+sig = utterance[1]
+signal = sig.tolist()
+# print(signal)
+normsignal = norm(signal)
+# print(normsignal)
+Twidth = 10
+Tstep = 100
+splitsignal = split(normsignal, fe, Twidth, Tstep)
+# print(splitsignal)
+
+EnergySignal = frameEnergy(splitsignal)
+
+print(EnergySignal)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
