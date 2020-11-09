@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.io.wavfile import read
 import random
+import matplotlib.pyplot as plt
 
 signal = [2, 3, 5, 9, 18, 62, 53, 1, 23, 5, 4, 6, 5, 66, 45, 100, -100]
 sig2 = [1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
@@ -117,21 +118,30 @@ def frameEnergy(splitlist):
 # print(splt)
 
 
-utterance = read("cmu_us_ksp_arctic/wav/%s" % (randomfichier()))
+utterance = read("../cmu_us_ksp_arctic/wav/%s" % (randomfichier()))
 fetot = utterance[0]
 fe = int(fetot / 1000)
 print(fe)
-# print(utterance)
+print(utterance)
 sig = utterance[1]
 signal = sig.tolist()
-# print(signal)
+print(signal)
 normsignal = norm(signal)
-# print(normsignal)
+print(normsignal)
 Twidth = 10
 Tstep = 100
 splitsignal = split(normsignal, fe, Twidth, Tstep)
-# print(splitsignal)
+print(splitsignal)
 
 EnergySignal = frameEnergy(splitsignal)
 
 print(EnergySignal)
+
+plt.plot(splitsignal, color='black')
+plt.plot(EnergySignal, '+', color='red')
+plt.show()
+
+plt.plot(splitsignal, color='black')
+plt.show()
+
+
