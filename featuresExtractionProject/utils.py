@@ -3,6 +3,7 @@ from scipy.io.wavfile import read
 import random
 import matplotlib.pyplot as plt
 import scipy.signal as sgl
+from talkbox import lpc_ref
 import math
 
 #============Pre-Processing============
@@ -199,6 +200,44 @@ def autocorr(signal, fe, Enerseuil):
     Fpitch = abs(np.mean(Vpitch))# calcul la moyenne de l array liste  
 
     return listpitch
+
+
+def cepstrum(signal, fe, threshold):
+    listceps = []  # on initialise notre liste
+    energy = frameEnergy(signal)
+
+    for i in range(len(signal)):
+
+        if energy[i - 1] > threshold:
+
+            arrsignal = np.array(signal[i - 1])
+
+            N = len(arrsignal)
+            framehamming = arrsignal * sgl.hamming(N)
+
+            w, h = sgl.freqz(framehamming, 1, 512, whole=False)
+            ceps = abs(np.fft.ifft(np.log(h)))
+
+            lowerBound = int((512 / (fe / 2)) * 60)
+            upperBound = int((512 / (fe / 2)) * 500)
+
+            maxima, value = sgl.find_peaks(ceps[lowerBound: upperBound], 0)
+            Hvalue = value['peak_heights']
+
+            Hvalue, maxima = zip(*sorted(zip(Hvalue, maxima)))
+            temp = maxima[len(maxima) - 1]
+
+            ffond = temp * (fe / 2) / 512
+            listceps.append(ffond)
+
+        else:
+            ffond = 0
+            listceps.append(ffond)
+
+    Vceps = np.array(listceps)  # transforme la liste en array list pour faciliter les calculs
+    Fceps = abs(np.mean(Vceps))  # calcul la moyenne de l array liste
+
+    return listceps
       
 def formant( signal, fe):
        
