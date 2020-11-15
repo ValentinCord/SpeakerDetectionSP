@@ -2,7 +2,7 @@ from utils import split
 
 # Teste width < step
 signal1 = [1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-fe1 = 1
+fe1 = 1000
 width1 = 2
 step1 = 4
 
@@ -13,7 +13,7 @@ else:
 
 # Teste widht = step
 signal2 = [1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-fe2 = 1
+fe2 = 1000
 width2 = 2
 step2 = 2
 
@@ -24,18 +24,18 @@ else:
 
 # Teste width > step
 signal3 = [1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-fe3 = 1
+fe3 = 1000
 width3 = 4
 step3 = 2
 
-if (split(signal3, fe3, width3, step3) == None):
+if (split(signal3, fe3, width3, step3) == 0):
     print("true")
 else:
     print("false")
 
 # Teste en modifiant fe
 signal4 = [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1]
-fe4 = 2
+fe4 = 2000
 width4 = 2
 step4 = 4
 
@@ -46,22 +46,22 @@ else:
 
 # Teste width = step = 0
 signal5 = [1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-fe5 = 1
+fe5 = 1000
 width5 = 0
 step5 = 0
 
-if (split(signal5, fe5, width5, step5) == None):
+if (split(signal5, fe5, width5, step5) == 0):
     print("true")
 else:
     print("false")
 
 # Teste width = 0 (pas besion de testé step = 0 séparement car on a déjà testé step < width)
 signal6 = [1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-fe6 = 1
+fe6 = 1000
 width6 = 0
 step6 = 2
 
-if (split(signal6, fe6, width6, step6) == None):
+if (split(signal6, fe6, width6, step6) == 0):
     print("true")
 else:
     print("false")
@@ -72,7 +72,10 @@ fe7 = 0
 width7 = 2
 step7 = 4
 
-if (split(signal7, fe7, width7, step7) == None):
+if (split(signal7, fe7, width7, step7) == 0):
     print("true")
 else:
     print("false")
+
+
+
