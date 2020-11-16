@@ -185,19 +185,17 @@ def autocorr(signal, fe, Enerseuil):
             arrsignal = np.array(signal[i - 1])  # transforme notre signal en array list afin de faciiliter les calculs
             lags, corr = xcorr(arrsignal, maxlag=int(fe / 50))  # Utilise la fct corr pour etudier les correlations
             # plt.plot(corr)
-            maxima, value = sgl.find_peaks(corr, 0)  # on cherche tous les maxima
+
+            maxima, value = sgl.find_peaks(corr, height=0, distance=40)  # on cherche tous les maxima
             Hvalue = value[
                 'peak_heights']  # Lorsqu on lit les "values", cela nous affiche {'peak_heights':array([... ])} et on veut juste array
             # "maxima" correspond a la position des sommets sur l axe des x et "value" correspond aux hauteurs de ceux-ci
             maxima = maxima.tolist()  # On transforme "maxima" en array list
-
-            if (len(maxima) > 1):
-                Hvalue.sort()  # on trie par ordre croissant les hauteurs
-                temp = np.abs(maxima[len(maxima) - 1] - maxima[
-                    len(maxima) - 2])  # on calcul la distance, sur l axe des x, des 2 hauteurs les plus significatives
-
-                ffond = fe // temp  # on calcul la frequence fondamentale
-                listpitch.append(ffond)  # introduit la donnee dans la liste
+            Hvalue, maxima = zip(*sorted(zip(Hvalue, maxima)))  # on trie par ordre croissant les hauteurs
+            temp = np.abs(maxima[len(maxima) - 1] - maxima[len(
+                maxima) - 2])  # on calcul la distance, sur l axe des x, des 2 hauteurs les plus significatives
+            ffond = fe / temp  # on calcul la frequence fondamentale
+            listpitch.append(ffond)  # introduit la donnee dans la liste
 
         else:
             ffond = 0  # si les valeurs sont en dessous du seuil d energie, on considere la valeurs comme nulle
@@ -243,7 +241,7 @@ def cepstrum(signal, fe, threshold):
 
     Vceps = np.array(listceps)  # transforme la liste en array list pour faciliter les calculs
     Fceps = abs(np.mean(Vceps))  # calcul la moyenne de l array liste
-    return Fceps
+    return listceps
 
 
 def formant(signal, fe):
@@ -309,9 +307,12 @@ def ruleAutocorr(n):
     plt.show()
 
 
+ruleAutocorr(50)
+
+
 def ruleCepstrum(n):
-    Twidth = 30
-    Tstep = 30
+    Twidth = 100
+    Tstep = 100
     for i in range(n):
         signal, fe = readFiles('male')
         normsignal = norm(signal)
@@ -327,7 +328,7 @@ def ruleCepstrum(n):
     plt.show()
 
 
-# ruleCepstrum(50)
+ruleCepstrum(50)
 
 
 def ruleFormant(n):
@@ -348,7 +349,7 @@ def ruleFormant(n):
     plt.show()
 
 
-ruleFormant(50)
+# ruleFormant(50)
 
 
 # ==========Rule-based Systeme=========
@@ -379,5 +380,4 @@ def ruleBasedSystem(n):
     accuracy = score / n
     return accuracy
 
-
-print(ruleBasedSystem(50))
+# print(ruleBasedSystem(50))
