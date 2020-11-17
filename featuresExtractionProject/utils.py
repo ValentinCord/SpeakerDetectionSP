@@ -207,6 +207,30 @@ def autocorr(signal, fe, Enerseuil):
     return listpitch
 
 
+def compute_cepstrum(signal, sample_freq):
+    """Computes cepstrum."""
+    frame_size = signal.size
+    windowed_signal = np.hamming(frame_size) * signal
+    dt = 1 / sample_freq
+    freq_vector = np.fft.rfftfreq(frame_size, d=dt)
+    X = np.fft.rfft(windowed_signal)
+    log_X = np.log(np.abs(X))
+    cepstrum = np.fft.rfft(log_X)
+    df = freq_vector[1] - freq_vector[0]
+    quefrency_vector = np.fft.rfftfreq(log_X.size, df)
+    return quefrency_vector, cepstrum
+
+
+def cepstrum_f0_detection(signal, sample_freq, fmin=60, fmax=500):
+    """Returns f0 based on cepstral processing."""
+    quefrency_vector, cepstrum = compute_cepstrum(signal, sample_freq)
+    # extract peak in cepstrum in valid region
+    valid = (quefrency_vector > 1 / fmax) & (quefrency_vector <= 1 / fmin)
+    max_quefrency_index = np.argmax(np.abs(cepstrum)[valid])
+    f0 = 1 / quefrency_vector[valid][max_quefrency_index]
+    return f0
+
+
 def cepstrum(signal, fe, threshold):
     listceps = []  # on initialise notre liste
     energy = frameEnergy(signal)
@@ -217,23 +241,10 @@ def cepstrum(signal, fe, threshold):
 
             arrsignal = np.array(signal[i - 1])
 
-            N = len(arrsignal)
-            framehamming = arrsignal * sgl.hamming(N)
+            ffond = cepstrum_f0_detection(arrsignal, fe)
 
-            w, h = sgl.freqz(framehamming, 1, 512, whole=False)
-            ceps = abs(np.fft.ifft(np.log(h)))
+            listceps.append((ffond))
 
-            lowerBound = int((512 / (fe / 2)) * 60)
-            upperBound = int((512 / (fe / 2)) * 500)
-
-            maxima, value = sgl.find_peaks(ceps[lowerBound: upperBound], 0)
-            Hvalue = value['peak_heights']
-
-            Hvalue, maxima = zip(*sorted(zip(Hvalue, maxima)))
-            temp = maxima[len(maxima) - 1]
-
-            ffond = temp * (fe / 2) / 512
-            listceps.append(ffond)
 
         else:
             ffond = 0
