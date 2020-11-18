@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import scipy.signal as sgl
 from talkbox import lpc_ref
 import math
+from filterbanks import filter_banks
+from scipy.fftpack import dct
 
 
 # ============Pre-Processing============
@@ -35,9 +37,6 @@ def split(signal, fe, Twidth, Tstep):
                 return 0
     if (fe == 0):
         print("la fréquence d'échantillonage est nulle")
-        return 0
-    if (signal == 0):
-        print("le signal est nul")
         return 0
 
     # Calcule de Nwidth & Nstep (passade du domaine temporel au domaine discret)
@@ -110,6 +109,24 @@ def readFiles(choix):
         print('Choisissez entre "male" ou "female"')
 
     return signal, fe
+
+
+def readFiles2():
+    choixm = '../cmu_us_bdl_arctic/wav/%s'
+    choixf = '../cmu_us_slt_arctic/wav/%s'
+
+    rand = randomfichier()
+    utterancem = read(choixm % (rand))
+    fem = utterancem[0]
+    sigm = utterancem[1]
+    signalm = sigm.tolist()
+
+    utterancef = read(choixf % (rand))
+    fef = utterancef[0]
+    sigf = utterancef[1]
+    signalf = sigf.tolist()
+
+    return signalm, fem, signalf, fef
 
 
 # ===============Features===============
@@ -215,9 +232,16 @@ def compute_cepstrum(signal, sample_freq):
     freq_vector = np.fft.rfftfreq(frame_size, d=dt)
     X = np.fft.rfft(windowed_signal)
     log_X = np.log(np.abs(X))
+
+    # plt.plot(freq_vector, d=dt)
+    # plt.show()
     cepstrum = np.fft.rfft(log_X)
     df = freq_vector[1] - freq_vector[0]
     quefrency_vector = np.fft.rfftfreq(log_X.size, df)
+
+    plt.plot(quefrency_vector, np.abs(cepstrum))
+    plt.xlabel('quefrency (s)')
+    plt.show()
     return quefrency_vector, cepstrum
 
 
@@ -256,6 +280,9 @@ def cepstrum(signal, fe, threshold):
 
 
 def formant(signal, fe):
+    frqs = []
+    newfrqs = []
+
     for i in range(len(signal)):
         framefilter = np.array(sgl.lfilter([1., -0.67], 1, signal[i - 1]))
 
@@ -263,22 +290,79 @@ def formant(signal, fe):
         framehamming = framefilter * sgl.hamming(N)
 
         # get LPC
-        A = lpc_ref(framehamming, 12)
+        A = lpc_ref(framehamming, (2 + int(fe / 1000)))
 
         # get roots
         rts = np.roots(A)
+        rts = [r for r in rts if np.imag(r) > 0]
 
         # angz = np.array(np.angle(rts)) ou
         angz = np.arctan2(np.imag(rts), np.real(rts))
 
         frqs = np.array(np.unique(abs(angz * (fe / (2 * np.pi)))))
-
         frqs.tolist()
         frqs.sort()
-        frq = np.array(frqs)
-        frq = np.mean(frq)
+        # frs = sorted(angz * (fe / (2 * np.pi)))
 
-    return frq
+        '''
+        frqs.append(sorted(angz *(fe/ (2*np.pi))))
+
+
+        for j in range(len(frqs[i])):
+            if frqs[i][j] != 0 :
+                frqs[i] = frqs[i][j]
+                break 
+
+
+        moyenneformant= 0
+        m = 0
+        for j in range(len(frqs)):
+            moyenneformant += frqs[j]
+            m  +=1
+        if m != 0:
+            moyenneformant = moyenneformant/m
+        '''
+
+    return frqs
+
+
+def MFCC(signal, fe):
+    signal = np.asarray(signal)
+
+    pre_emphasis = 0.97
+    emphasized_signal = np.append(signal[0], signal[1:] - pre_emphasis * signal[:-1])
+
+    emphasized_signal.tolist()
+
+    frames = split(emphasized_signal, fe, 15, 30)
+
+    frames = np.array(frames)
+
+    # fait le hamming pour chaque frame
+    i = 0
+    while i < len(frames):
+        w = sgl.hamming(len(frames[i]))
+        frames[i] = w * frames[i]
+        # Power Spectrum
+        i = i + 1
+
+    NFFT = 512
+    i = 0
+    # trouve la puissance
+    while i < len(frames):
+        frames[i] = (np.abs(np.fft.fft(frames[i])) ** 2) / (2 * NFFT)
+        i = i + 1
+
+    temp = (len(frames[
+                    0]) * 2) - 1  # if we don't use that it says out of range NFFT: number of frequency calculated, typically 512
+
+    filterbanks = filter_banks(frames, fe, nfilt=40, NFFT=temp)  # found on moodle
+
+    vectmfcc = dct(filterbanks, type=2, axis=1, norm='ortho')  # function written in the document
+
+    finalmfcc = vectmfcc[:, 0:13]
+
+    return finalmfcc
 
 
 # ========Discriminatory rules=========
@@ -318,8 +402,7 @@ def ruleAutocorr(n):
     plt.show()
 
 
-ruleAutocorr(50)
-
+# ruleAutocorr(50)
 
 def ruleCepstrum(n):
     Twidth = 100
@@ -339,28 +422,41 @@ def ruleCepstrum(n):
     plt.show()
 
 
-ruleCepstrum(50)
+# ruleCepstrum(50)
 
 
 def ruleFormant(n):
-    Twidth = 50
-    Tstep = 50
+    Twidth = 100
+    Tstep = 100
     for i in range(n):
-        signal, fe = readFiles('male')
-        normsignal = norm(signal)
-        splitsignal = split(normsignal, fe, Twidth, Tstep)
-        listformant = formant(splitsignal, fe)
+        signalm, fem, signalf, fef = readFiles2()
+        splitsignal = split(signalm, fem, Twidth, Tstep)
+        listformant = formant(splitsignal, fem)
         plt.plot(listformant, '+', color='blue')
 
-        signal, fe = readFiles('female')
-        normsignal = norm(signal)
-        splitsignal = split(normsignal, fe, Twidth, Tstep)
-        listformant = formant(splitsignal, fe)
+        splitsignal = split(signalf, fef, Twidth, Tstep)
+        listformant = formant(splitsignal, fef)
         plt.plot(listformant, '+', color='pink')
-    plt.show()
+        plt.show()
 
 
-# ruleFormant(50)
+ruleFormant(10)
+
+
+# le mfcc marche
+def ruleMFCC(n):
+    for i in range(n):
+        signalm, fem, signalf, fef = readFiles2()
+
+        listMFCC = MFCC(signalm, fem)
+        plt.plot(listMFCC, '+', color='blue')
+
+        listMFCC = MFCC(signalf, fef)
+        plt.plot(listMFCC, '+', color='pink')
+        plt.show()
+
+
+# ruleMFCC(10)
 
 
 # ==========Rule-based Systeme=========
